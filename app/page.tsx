@@ -1,65 +1,126 @@
-import Image from "next/image";
+'use client'
+import { useEffect, useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import {
+  CardFlip,
+  CardFlipFront,
+  CardFlipBack,
+  CardFlipContent,
+  useCardFlip
+} from "@/components/ui/card-flip";
+import { ComicText } from '@/components/ui/comic-text';
+
+function ComicTextBubble() {
+  return (
+    <motion.div
+      className="absolute -top-40 left-1/2 transform -translate-x-1/2 z-50 whitespace-nowrap"
+      initial={{ opacity: 0, x: -200 }}
+      animate={{ 
+        opacity: 1, 
+        x: 0,
+        y: [0, -10, 0]
+      }}
+      transition={{
+        opacity: { duration: 0.6 },
+        x: { duration: 0.8, ease: "easeOut" },
+        y: {
+          duration: 0.5,
+          repeat: Infinity,
+          repeatType: "reverse",
+          ease: "easeInOut"
+        }
+      }}
+    >
+      <ComicText fontSize={4}>putang ina mo!</ComicText>
+    </motion.div>
+  );
+}
+
+function VideoEmbed({ onShowComic, onHideComic }: { onShowComic: () => void; onHideComic: () => void }) {
+  const { isFlipped } = useCardFlip();
+  const [iframeKey, setIframeKey] = useState(0);
+  const baseUrl = "https://www.youtube.com/embed/X5cOk0U_f1g";
+
+  useEffect(() => {
+    if (isFlipped) {
+      // Force fresh iframe load when flipped to back
+      // This ensures clean state and stops previous playback
+      setIframeKey(Date.now());
+      
+      // Show comic text when card flips
+      // Add a small delay to let the flip animation complete
+      const timer = setTimeout(() => {
+        onShowComic();
+      }, 300);
+      return () => clearTimeout(timer);
+    } else {
+      // Hide comic text when flipped back to front
+      onHideComic();
+    }
+  }, [isFlipped, onShowComic, onHideComic]);
+
+  // Only render iframe when flipped - unmounting stops playback
+  if (!isFlipped) {
+    return null;
+  }
+
+  // Load iframe with autoplay when flipped to back
+  // autoplay=1 and mute=1 are required for autoplay to work in most browsers
+  const iframeSrc = `${baseUrl}?si=6DuondIInGOjWVel&controls=0&start=44&autoplay=1&mute=0`;
+
+  return (
+    <div onClick={(e) => e.stopPropagation()} className="w-full">
+      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+        <iframe 
+          key={`youtube-${iframeKey}`}
+          data-testid="embed-iframe" 
+          className="absolute top-0 left-0 w-full h-full rounded-xl"
+          src={iframeSrc}
+          title="YouTube video player"
+          frameBorder="0" 
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+          referrerPolicy="strict-origin-when-cross-origin"
+          allowFullScreen
+          style={{ border: 'none' }}
+        />
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
+  const [showComicText, setShowComicText] = useState(false);
+
+  const handleShowComic = useCallback(() => {
+    setShowComicText(true);
+  }, []);
+
+  const handleHideComic = useCallback(() => {
+    setShowComicText(false);
+  }, []);
+
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="flex justify-center items-center min-h-[70vh] w-full p-4">
+      <div className="relative w-full max-w-md">
+        {showComicText && <ComicTextBubble />}
+        <CardFlip className="w-full mx-auto">
+          <CardFlipFront>
+            <CardFlipContent>
+              <p className="text-center text-2xl font-bold">Click the card to flip</p>
+            </CardFlipContent>
+          </CardFlipFront>
+        
+          <CardFlipBack>
+            <CardFlipContent>
+              <VideoEmbed 
+                onShowComic={handleShowComic} 
+                onHideComic={handleHideComic}
+              />
+            </CardFlipContent>
+          </CardFlipBack>
+        </CardFlip>
+      </div>
     </div>
   );
 }
